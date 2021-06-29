@@ -16,6 +16,17 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	session, err := p.OpenSession(slots[i], pkcs11.CKF_SERIAL_SESSION|pkcs11.CKF_RW_SESSION)
+	if err != nil {
+		 panic(err)
+	}
+	defer p.CloseSession(session)
+	//Login
+	err = p.Login(session,pkcs11.CKU_USER,"3434")
+	if err!=nil{
+		panic(err)
+	}
+	defer p.Logout(session)	
 	switch arg {
 	case "list":
 		fmt.Println("CASE LIST")
@@ -23,17 +34,7 @@ func main() {
 			//Get slot Id
 			fmt.Printf("slots[%d]: 0x%x\n",i,slots[i])
 			//open session   sessionhandler = session
-			session, err := p.OpenSession(slots[i], pkcs11.CKF_SERIAL_SESSION|pkcs11.CKF_RW_SESSION)
-			if err != nil {
-				 panic(err)
-			}
-			defer p.CloseSession(session)
-			//Login
-			err = p.Login(session,pkcs11.CKU_USER,"3434")
-			if err!=nil{
-				panic(err)
-			}
-			defer p.Logout(session)
+
 			// find Object
 			//pubtemp := []*pkcs11.Attribute{pkcs11.NewAttribute(pkcs11.CKA_CLASS,pkcs11.CKO_PUBLIC_KEY)}
 			//privtemp := []*pkcs11.Attribute{pkcs11.NewAttribute(pkcs11.CKA_CLASS,pkcs11.CKO_PRIVATE_KEY)}
