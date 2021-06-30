@@ -1,11 +1,9 @@
 package main
 
 import (
-	/*"crypto"
+	"encoding/base64"
+
 	"crypto/rand"
-	"crypto/rsa"
-	"crypto/sha256"
-	//"encoding/base64"*/
 	"fmt"
 	"github.com/miekg/pkcs11"
 	"encoding/binary"
@@ -355,13 +353,36 @@ func main() {
 		}else if arg[5] == "--out" {
 			outfile = arg[6]
 		}
-
-		fmt.Println(label, " " , infile , " " , outfile)
+                secretKeyTemplate := []*pkcs11.Attribute{
+                        pkcs11.NewAttribute(pkcs11.CKA_TOKEN, true),
+                        pkcs11.NewAttribute(pkcs11.CKA_KEY_TYPE, pkcs11.CKK_AES),
+                        pkcs11.NewAttribute(pkcs11.CKA_CLASS , pkcs11.CKO_SECRET_KEY),
+                        pkcs11.NewAttribute(pkcs11.CKA_LABEL, label),
+                }
+                if err := p.FindObjectsInit(session, secretKeyTemplate); err != nil {
+                        fmt.Println(err)
+                }
+                objects,_,_ := p.FindObjects(session,1)
+                aeskey := objects[0]
+                p.FindObjectsFinal(session)
+		//fmt.Println(label, " " , infile , " " , outfile)
 
 		dat, err := ioutil.ReadFile(infile)
 		if err != nil {panic(err)}
-		fmt.Print(string(dat))
-                /* ------------------- 지정한 AES 키로 암호화  ----------------------   */
+		data := string(dat)
+		//fmt.Print(data)
+		iv := make([]byte, 16)
+		_, err = rand.Read(iv)
+		if err!=nil {log.Fatal(err)}
+		err = p.EncryptInit(session , []*pkcs11.Mechanism{pkcs11.NewMechanism(pkcs11.CKM_AES_CBC_PAD,iv)},aeskey)
+                if err!=nil {log.Fatal(err)}
+		cipher, err := p.Encrypt(session, []byte(data))
+		if err != nil {log.Fatal(err)}
+		cdWithIV := append(iv,cipher...)
+		base64cipher := base64.RawStdEncoding.EncodeToString(cdWithIV)
+		fmt.Printf("Encrypted IV+Cipher %s", base64cipher)
+		err = ioutil.WriteFile(outfile,cdWithIV,0644)
+		/* ------------------- 지정한 AES 키로 암호화  ----------------------   */
         case "decrypt-aes" :
                 label := ""
                 infile := ""
@@ -382,11 +403,37 @@ func main() {
                         outfile = arg[6]
                 }
 
-                fmt.Println(label, " " , infile , " " , outfile)
+               // fmt.Println(label, " " , infile , " " , outfile)
 
                 dat, err := ioutil.ReadFile(infile)
                 if err != nil {panic(err)}
-                fmt.Print(string(dat))
+		//fmt.Println(len(dat))
+		//fmt.Print(dat)
+		secretKeyTemplate := []*pkcs11.Attribute{
+                        pkcs11.NewAttribute(pkcs11.CKA_TOKEN, true),
+                        pkcs11.NewAttribute(pkcs11.CKA_KEY_TYPE, pkcs11.CKK_AES),
+                        pkcs11.NewAttribute(pkcs11.CKA_CLASS , pkcs11.CKO_SECRET_KEY),
+                        pkcs11.NewAttribute(pkcs11.CKA_LABEL, label),
+                }
+                if err := p.FindObjectsInit(session, secretKeyTemplate); err != nil {
+                        fmt.Println(err)
+                }
+                objects,_,_ := p.FindObjects(session,1)
+                aeskey := objects[0]
+		p.FindObjectsFinal(session)
+
+		err = p.DecryptInit(session, []*pkcs11.Mechanism{pkcs11.NewMechanism(pkcs11.CKM_AES_CBC_PAD, dat[0:16])}, aeskey)
+		if err != nil {
+			panic(fmt.Sprintf("EncryptInit() failed %s\n", err))
+		}
+
+		pt, err := p.Decrypt(session, dat[16:])
+		if err != nil {
+			panic(fmt.Sprintf("Encrypt() failed %s\n", err))
+		}
+
+		log.Printf("Decrypt %s", string(pt))
+		err = ioutil.WriteFile(outfile,pt,0644)
                 /* ------------------- 지정한 AES 키로 복호화  ----------------------   */
 
 	default :
