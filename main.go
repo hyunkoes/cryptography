@@ -42,6 +42,38 @@ func tp(t byte) (string){
 	}
 
 }
+//                        pkcs11.NewAttribute(pkcs11.CKA_KEY_TYPE, pkcs11.CKK_RSA),
+
+func addAttribute(tp []*pkcs11.Attribute,opt string,val string) ([]*pkcs11.Attribute){
+	if tp == nil {
+		if opt == "keytype"{
+        	        if val == "RSA"||val =="rsa"{
+        	                tp = []*pkcs11.Attribute{pkcs11.NewAttribute(pkcs11.CKA_KEY_TYPE,pkcs11.CKK_RSA)}
+        	        } else if val == "AES"||val=="aes" {
+        	                tp = []*pkcs11.Attribute{pkcs11.NewAttribute(pkcs11.CKA_KEY_TYPE,pkcs11.CKK_AES)}
+        	        } else if val == "EC"||val=="ec" {
+        	                tp = []*pkcs11.Attribute{pkcs11.NewAttribute(pkcs11.CKA_KEY_TYPE,pkcs11.CKK_EC)}
+        	        }
+        	}
+        	if opt == "id"{
+        	        tp = append(tp, pkcs11.NewAttribute(pkcs11.CKA_ID, val))
+        	}
+	}
+
+	if opt == "keytype"{
+		if val == "RSA"||val =="rsa"{
+			tp = append(tp, pkcs11.NewAttribute(pkcs11.CKA_KEY_TYPE,pkcs11.CKK_RSA))
+		} else if val == "AES"||val=="aes" {
+			tp = append(tp, pkcs11.NewAttribute(pkcs11.CKA_KEY_TYPE,pkcs11.CKK_AES))
+		} else if val == "EC"||val=="ec" {
+			tp = append(tp, pkcs11.NewAttribute(pkcs11.CKA_KEY_TYPE,pkcs11.CKK_EC))
+		}
+	}
+	if opt == "id"{
+		tp = append(tp, pkcs11.NewAttribute(pkcs11.CKA_ID, val))
+	}
+	return tp
+}
 func main() {
 	libPath := os.Getenv("LIB")
 	p := pkcs11.New(libPath)
@@ -78,8 +110,26 @@ func main() {
 		//Get slot Id
 		fmt.Printf("slots[%d]: 0x%x\n",1,slots[1])
 		//open session   sessionhandler = session
+		var findtp []*pkcs11.Attribute
+		if arg[1] == "--key-type" {
+			findtp = addAttribute(findtp,"keytype",arg[2])
+			if len(arg)>3 && arg[3] == "--id" {
+				findtp = addAttribute(findtp,"id", arg[4])
+			} else {
+				log.Fatal("Invalid option")
+			}
+		} else if arg[1] == "--id"{
+			findtp = addAttribute(findtp,"id", arg[2])
+			if len(arg)>3 && arg[3] == "--key-type"{
+				findtp = addAttribute(findtp,"keytype",arg[4])
+			}else{
+				log.Fatal("Invalid option")
+			}
+		} else {
+			log.Fatal("Invalid option")
+		}
 		// find Object
-		if e := p.FindObjectsInit(session, nil); e != nil {
+		if e := p.FindObjectsInit(session, findtp); e != nil {
 			fmt.Println("nice")
 		}
 		objects,_,_ := p.FindObjects(session,100)
@@ -88,6 +138,9 @@ func main() {
 			pkcs11.NewAttribute(pkcs11.CKA_KEY_TYPE,nil),
 			pkcs11.NewAttribute(pkcs11.CKA_CLASS,nil),
 		}
+		fmt.Println("1 : ", len(template))
+
+		fmt.Println("2 : ", len(template))
 		for j := 0 ; j < len(objects) ; j++ {
 			attr,err := p.GetAttributeValue(session,objects[j] ,template)
 			if err != nil{
@@ -216,7 +269,6 @@ func main() {
 
 	case "sign-rsa" :
 		label := ""
-		_ = label
 		msg := ""
 		if arg[1] != "--label" {
 			panic("--label <label name>")
@@ -255,7 +307,7 @@ func main() {
 			log.Fatal(e)
 		}
 		fmt.Println("Sign success!")
-		fmt.Println(signature)
+		fmt.Println(base64.RawStdEncoding.EncodeToString(signature))
 		p.SignFinal(session)
 		/* ------------------- 지정한 RSA 키로 데이터 서명 ----------------------   */
 
@@ -475,12 +527,54 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Printf("It works!")
-		_ = label
+		fmt.Println("Generate EC key , Label : " , label)
+	  /*------------------------curve, label 입력받아 EC 키 쌍 생성 ----------------------------------*/
+	case "sign-ec":
+                label := ""
+                msg := ""
+                if arg[1] != "--label" {
+                        panic("--label <label name>")
+                }else if ( arg[1] == "--label" ) {
+                        label = arg[2]
+                }
+                if arg[3] != "--data"{
+                        panic("--data <message>")
+                }else if arg[3] == "--data" {
+                        msg = arg[4]
+                }
+                privateKeyTemplate := []*pkcs11.Attribute{
+                        pkcs11.NewAttribute(pkcs11.CKA_PRIVATE,true),
+                        pkcs11.NewAttribute(pkcs11.CKA_TOKEN, true),
+                        pkcs11.NewAttribute(pkcs11.CKA_SIGN, true),
+                        pkcs11.NewAttribute(pkcs11.CKA_KEY_TYPE, pkcs11.CKK_EC),
+                        pkcs11.NewAttribute(pkcs11.CKA_CLASS , pkcs11.CKO_PRIVATE_KEY),
+                        pkcs11.NewAttribute(pkcs11.CKA_LABEL, label),
+                }
+                if err := p.FindObjectsInit(session, privateKeyTemplate); err != nil {
+                        fmt.Println(err)
+                }
+                objects,_,_ := p.FindObjects(session,1)
+                priv := objects[0]
+                p.FindObjectsFinal(session)
+                dat, err := ioutil.ReadFile(msg)
+                if err != nil {panic(err)}
+                data := string(dat)
+                fmt.Println(data)
+                d := []byte(data)
+
+                err = p.SignInit(session, []*pkcs11.Mechanism{pkcs11.NewMechanism(pkcs11.CKM_ECDSA,nil)}, priv)
+                if err != nil {log.Fatal(err)}
+                signature,e := p.Sign(session,d)
+                if e != nil {
+                        log.Fatal(e)
+                }
+                fmt.Println("Sign success!")
+                fmt.Println(base64.RawStdEncoding.EncodeToString(signature))
+                p.SignFinal(session)
+		/*------------------------ label로 지정한 EC private key 로 서명하기  ----------------------------------*/
+	case "getpub-ec": // EC 공개키 추출
 	default :
 		fmt.Println("default")
 
 	}
 }
-
-
