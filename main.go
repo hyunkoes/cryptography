@@ -435,7 +435,48 @@ func main() {
 		log.Printf("Decrypt %s", string(pt))
 		err = ioutil.WriteFile(outfile,pt,0644)
                 /* ------------------- 지정한 AES 키로 복호화  ----------------------   */
-
+	case "--gen-ec":
+		curve := "gen ec"
+		label := ""
+                if arg[1] != "--curve" {
+                        panic("--curve <curve type>")
+                }else {
+                        curve = arg[2]
+                }
+                if arg[3] != "--label"{
+                        panic("--label <label name>")
+                }else{
+                        label = arg[4]
+                }
+		if ( curve == "secp256r1" ) {fmt.Println(curve, " 타입으로 생성 시작")
+		} else {
+			panic("only secp256r1 yet")
+		}
+		publicKeyTemplate := []*pkcs11.Attribute{
+			// oid of P256
+			pkcs11.NewAttribute(pkcs11.CKA_EC_PARAMS, []byte{0x06, 0x08, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07}),
+			pkcs11.NewAttribute(pkcs11.CKA_LABEL, label),
+			pkcs11.NewAttribute(pkcs11.CKA_KEY_TYPE, pkcs11.CKK_EC),
+			pkcs11.NewAttribute(pkcs11.CKA_VERIFY, true),
+			pkcs11.NewAttribute(pkcs11.CKA_ENCRYPT, false),
+			pkcs11.NewAttribute(pkcs11.CKA_TOKEN, true),
+			pkcs11.NewAttribute(pkcs11.CKA_PRIVATE, false),
+		}
+		privateKeyTemplate := []*pkcs11.Attribute{
+			pkcs11.NewAttribute(pkcs11.CKA_LABEL, label),
+			pkcs11.NewAttribute(pkcs11.CKA_KEY_TYPE, pkcs11.CKK_EC),
+			pkcs11.NewAttribute(pkcs11.CKA_SIGN, true),
+			pkcs11.NewAttribute(pkcs11.CKA_DECRYPT, false),
+			pkcs11.NewAttribute(pkcs11.CKA_SENSITIVE, true),
+			pkcs11.NewAttribute(pkcs11.CKA_TOKEN, true),
+			pkcs11.NewAttribute(pkcs11.CKA_PRIVATE, true),
+		}
+		_, _, err := p.GenerateKeyPair(session, []*pkcs11.Mechanism{pkcs11.NewMechanism(pkcs11.CKM_EC_KEY_PAIR_GEN,nil)}, publicKeyTemplate, privateKeyTemplate)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("It works!")
+		_ = label
 	default :
 		fmt.Println("default")
 
