@@ -1,11 +1,11 @@
 package main
 
 import (
-	"crypto"
+	/*"crypto"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
-	//"encoding/base64"
+	//"encoding/base64"*/
 	"fmt"
 	"github.com/miekg/pkcs11"
 	"encoding/binary"
@@ -81,20 +81,14 @@ func main() {
 		fmt.Printf("slots[%d]: 0x%x\n",1,slots[1])
 		//open session   sessionhandler = session
 		// find Object
-		//pubtemp := []*pkcs11.Attribute{pkcs11.NewAttribute(pkcs11.CKA_CLASS,pkcs11.CKO_PUBLIC_KEY)}
-		//privtemp := []*pkcs11.Attribute{pkcs11.NewAttribute(pkcs11.CKA_CLASS,pkcs11.CKO_PRIVATE_KEY)}
-		//aestemp := []*pkcs11.Attribute{pkcs11.NewAttribute(pkcs11.CKA_CLASS,pkcs11.CKO_SECRET_KEY)}
 		if e := p.FindObjectsInit(session, nil); e != nil {
 			fmt.Println("nice")
 		}
-		//p.FindObjectsInit(session, privtemp)
-		//p.FindObjectsInit(session,pubtemp)
 		objects,_,_ := p.FindObjects(session,100)
 		template := []*pkcs11.Attribute{
 			pkcs11.NewAttribute(pkcs11.CKA_LABEL,nil),
 			pkcs11.NewAttribute(pkcs11.CKA_KEY_TYPE,nil),
 			pkcs11.NewAttribute(pkcs11.CKA_CLASS,nil),
-			//pkcs11.NewAttribute(pkcs11.CKA_MODULUS_BITS,nil),
 		}
 		for j := 0 ; j < len(objects) ; j++ {
 			attr,err := p.GetAttributeValue(session,objects[j] ,template)
@@ -103,7 +97,6 @@ func main() {
 			}
 			fmt.Println("\nLabel   : ",byte2string(attr[0].Value))
 			fmt.Println("KeyType : ",keytp(attr[1].Value[0]))
-			//	fmt.Println("KeySize: ",attr[3].Value)
 			if keytp(attr[1].Value[0]) == "AES" {
 				t := []*pkcs11.Attribute{
 					pkcs11.NewAttribute(pkcs11.CKA_VALUE_LEN,nil),
@@ -187,7 +180,6 @@ func main() {
                         }
                         fmt.Println("\nLabel   : ",byte2string(attr[0].Value))
                         fmt.Println("KeyType : ",keytp(attr[1].Value[0]))
-                        //      fmt.Println("KeySize: ",attr[3].Value)
                         if keytp(attr[1].Value[0]) == "AES" {
                                 t := []*pkcs11.Attribute{
                                         pkcs11.NewAttribute(pkcs11.CKA_VALUE_LEN,nil),
@@ -238,29 +230,36 @@ func main() {
 		}else if arg[3] == "--data" {
 			msg = arg[4]
 		}
+                privateKeyTemplate := []*pkcs11.Attribute{
+			pkcs11.NewAttribute(pkcs11.CKA_PRIVATE,true),
+			pkcs11.NewAttribute(pkcs11.CKA_TOKEN, true),
+			pkcs11.NewAttribute(pkcs11.CKA_SIGN, true),
+			pkcs11.NewAttribute(pkcs11.CKA_KEY_TYPE, pkcs11.CKK_RSA),
+                        pkcs11.NewAttribute(pkcs11.CKA_CLASS , pkcs11.CKO_PRIVATE_KEY),
+                        pkcs11.NewAttribute(pkcs11.CKA_LABEL, label),
+                }
+                if err := p.FindObjectsInit(session, privateKeyTemplate); err != nil {
+                        fmt.Println(err)
+                }
+                objects,_,_ := p.FindObjects(session,1)
+		priv := objects[0]
+		p.FindObjectsFinal(session)
 		dat, err := ioutil.ReadFile(msg)
                 if err != nil {panic(err)}
-                fmt.Print(string(dat))
-		m := []byte(string(dat))
+		data := string(dat)
+		fmt.Println(data)
+		d := []byte(data)
 
-		// Before signing, we need to hash our message
-		// The hash is what we actually sign
-		msgHash := sha256.New()
-		_, err = msgHash.Write(m)
-		if err != nil {
-			panic(err)
+		err = p.SignInit(session, []*pkcs11.Mechanism{pkcs11.NewMechanism(pkcs11.CKM_SHA1_RSA_PKCS,nil)}, priv)
+		if err != nil {log.Fatal(err)}
+		signature,e := p.Sign(session,d)
+		if e != nil {
+			log.Fatal(e)
 		}
-		msgHashSum := msgHash.Sum(nil)
-
-		// In order to generate the signature, we provide a random number generator,
-		// our private key, the hashing algorithm that we used, and the hash sum
-		// of our message
-		signature, err := rsa.SignPSS(rand.Reader, nil, crypto.SHA256, msgHashSum, nil)
-		if err != nil {
-			panic(err)
-		}
+		fmt.Println("Sign success!")
 		fmt.Println(signature)
-                /* ------------------- 지정한 RSA 키로 데이터 서명 ----------------------   */
+		p.SignFinal(session)
+		/* ------------------- 지정한 RSA 키로 데이터 서명 ----------------------   */
 
 	case "--gen-aes":
                 label :=""
