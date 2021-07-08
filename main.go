@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/base64"
-
+	"strconv"
 	"crypto/rand"
 	"fmt"
 	"github.com/miekg/pkcs11"
@@ -53,13 +53,17 @@ func addAttribute(tp []*pkcs11.Attribute,opt string,val string) ([]*pkcs11.Attri
         	                tp = []*pkcs11.Attribute{pkcs11.NewAttribute(pkcs11.CKA_KEY_TYPE,pkcs11.CKK_AES)}
         	        } else if val == "EC"||val=="ec" {
         	                tp = []*pkcs11.Attribute{pkcs11.NewAttribute(pkcs11.CKA_KEY_TYPE,pkcs11.CKK_EC)}
-        	        }
+        	        } else {
+				log.Fatal("Invalid key type")
+			}
         	}
         	if opt == "id"{
-        	        tp = append(tp, pkcs11.NewAttribute(pkcs11.CKA_ID, val))
+       			id,_ := strconv.Atoi(val)
+			_ = id
+			//fmt.Println( binary.LittleEndian.Uint64(id))
+			tp = append(tp, pkcs11.NewAttribute(pkcs11.CKA_ID,[]byte(val) ))
         	}
 	}
-
 	if opt == "keytype"{
 		if val == "RSA"||val =="rsa"{
 			tp = append(tp, pkcs11.NewAttribute(pkcs11.CKA_KEY_TYPE,pkcs11.CKK_RSA))
@@ -70,7 +74,10 @@ func addAttribute(tp []*pkcs11.Attribute,opt string,val string) ([]*pkcs11.Attri
 		}
 	}
 	if opt == "id"{
-		tp = append(tp, pkcs11.NewAttribute(pkcs11.CKA_ID, val))
+		//_,_ := strconv.Atoi(val)
+
+		fmt.Println((val))
+		tp = append(tp, pkcs11.NewAttribute(pkcs11.CKA_ID, []byte(val)))
 	}
 	return tp
 }
@@ -106,27 +113,32 @@ func main() {
 
 	switch arg[0] {
 	case "list":
-		fmt.Println("CASE LIST")
 		//Get slot Id
 		fmt.Printf("slots[%d]: 0x%x\n",1,slots[1])
 		//open session   sessionhandler = session
 		var findtp []*pkcs11.Attribute
-		if arg[1] == "--key-type" {
-			findtp = addAttribute(findtp,"keytype",arg[2])
-			if len(arg)>3 && arg[3] == "--id" {
-				findtp = addAttribute(findtp,"id", arg[4])
+		if len(arg) > 1 {
+			if arg[1] == "--key-type" {
+				findtp = addAttribute(findtp,"keytype",arg[2])
+				/*if len(arg)>3 {
+					if arg[3] == "--id" {
+						findtp = addAttribute(findtp,"id", arg[4])
+					} else {
+						log.Fatal("Invalid option")
+					}
+				}
+			} else if arg[1] == "--id"{
+				findtp = addAttribute(findtp,"id", arg[2])
+				if len(arg)>3{
+					if len(arg)>3 && arg[3] == "--key-type"{
+						findtp = addAttribute(findtp,"keytype",arg[4])
+					}else{
+						log.Fatal("Invalid option")
+					}
+				}*/
 			} else {
 				log.Fatal("Invalid option")
 			}
-		} else if arg[1] == "--id"{
-			findtp = addAttribute(findtp,"id", arg[2])
-			if len(arg)>3 && arg[3] == "--key-type"{
-				findtp = addAttribute(findtp,"keytype",arg[4])
-			}else{
-				log.Fatal("Invalid option")
-			}
-		} else {
-			log.Fatal("Invalid option")
 		}
 		// find Object
 		if e := p.FindObjectsInit(session, findtp); e != nil {
@@ -137,15 +149,14 @@ func main() {
 			pkcs11.NewAttribute(pkcs11.CKA_LABEL,nil),
 			pkcs11.NewAttribute(pkcs11.CKA_KEY_TYPE,nil),
 			pkcs11.NewAttribute(pkcs11.CKA_CLASS,nil),
+			pkcs11.NewAttribute(pkcs11.CKA_ID,nil),
 		}
-		fmt.Println("1 : ", len(template))
-
-		fmt.Println("2 : ", len(template))
 		for j := 0 ; j < len(objects) ; j++ {
 			attr,err := p.GetAttributeValue(session,objects[j] ,template)
 			if err != nil{
 				panic(err)
 			}
+		//	fmt.Println("\nObj ID  : ",binary.LittleEndian.Uint64(attr[3].Value[:1]))
 			fmt.Println("\nLabel   : ",byte2string(attr[0].Value))
 			fmt.Println("KeyType : ",keytp(attr[1].Value[0]))
 			if keytp(attr[1].Value[0]) == "AES" {
@@ -170,14 +181,13 @@ func main() {
 					at,_ := p.GetAttributeValue(session,objects[j],t)
 					fmt.Println("KeySize : " , 8*len(at[0].Value))
 				}
-			}
-			/*else if keytp(attr[1].Value[0]) == "ECDSA" {
+			}/*else if keytp(attr[1].Value[0]) == "ECDSA" {
 				t := []*pkcs11.Attribute{
 					pkcs11.NewAttribute(pkcs11.CKA_EC_PARAMS,nil),
 				}
 				at,_ := p.GetAttributeValue(session,objects[j],t)
 				fmt.Println("EC VALUE : " , at[0].Value)
-				fmt.Println("EC      : ",string(at[0].Value[:6]))
+				fmt.Println("EC      : ",string(at[0].Value))
 			}*/
 			fmt.Println("Type    : ",tp(attr[2].Value[0]))
 			// Get attributeValue
@@ -572,7 +582,53 @@ func main() {
                 fmt.Println(base64.RawStdEncoding.EncodeToString(signature))
                 p.SignFinal(session)
 		/*------------------------ label로 지정한 EC private key 로 서명하기  ----------------------------------*/
-	case "getpub-ec": // EC 공개키 추출
+	case "getpub-ec":
+		fmt.Println("GETPUB_EC")
+		label := ""
+                outfile := ""
+                if arg[1] != "--label" {
+                        panic("--label <label name>")
+                }else if ( arg[1] == "--label" ) {
+                        label = arg[2]
+                }
+                if arg[3] != "--out"{
+                        panic("--out <output file>")
+                }else if arg[3] == "--out" {
+                        outfile = arg[4]
+                }
+		_,_ = label,outfile
+		/*----------------------------- EC 공개키 추출 ---------------------------*/
+	case "getpub-rsa" :
+		fmt.Println("GETPUB_RSA")
+		label := ""
+                outfile := ""
+                if arg[1] != "--label" {
+                        panic("--label <label name>")
+                }else if ( arg[1] == "--label" ) {
+                        label = arg[2]
+                }
+                if arg[3] != "--out"{
+                        panic("--out <output file>")
+                }else if arg[3] == "--out" {
+                        outfile = arg[4]
+                }
+                _,_ = label,outfile
+		privateKeyTemplate := []*pkcs11.Attribute{
+                        pkcs11.NewAttribute(pkcs11.CKA_PRIVATE,true),
+                        pkcs11.NewAttribute(pkcs11.CKA_TOKEN, true),
+                        pkcs11.NewAttribute(pkcs11.CKA_SIGN, true),
+                        pkcs11.NewAttribute(pkcs11.CKA_KEY_TYPE, pkcs11.CKK_RSA),
+                        pkcs11.NewAttribute(pkcs11.CKA_CLASS , pkcs11.CKO_PRIVATE_KEY),
+                        pkcs11.NewAttribute(pkcs11.CKA_LABEL, label),
+                }
+                if err := p.FindObjectsInit(session, privateKeyTemplate); err != nil {
+                        fmt.Println(err)
+                }
+                objects,_,_ := p.FindObjects(session,1)
+		
+                priv := objects[0]
+		_=priv
+		/*------------------------ RSA 공개키 추출 -------------------------------*/
 	default :
 		fmt.Println("default")
 
