@@ -35,3 +35,19 @@
 <복호화>
  
        M = C ^ d( mod n )  개인 키 사용
+
+## To do List ( in vue + golang )
+
+- UI
+  - Session Login<br><br>
+  - Object Generate 
+    - for each algorithm parameter.
+  - Object Export
+  - Object Delete
+  - Object Modify
+  - Object En/Decrypt
+    - for each algorithm parameter.
+  - Object Sign
+     - for each algorithm parameter.<br><br>
+- BackEnd
+  - mock adapter test
