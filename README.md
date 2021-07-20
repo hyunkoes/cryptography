@@ -40,14 +40,14 @@
 
 - UI
   - Session Login<br><br>
-  - Object Generate 
+  - Object Generate : doing..
     - for each algorithm parameter.
-  - Object Export
-  - Object Delete
-  - Object Modify
-  - Object En/Decrypt
+  - Object Export : done
+  - Object Delete : done
+  - Object Modify : done
+  - Object En/Decrypt : done
     - for each algorithm parameter.
-  - Object Sign
+  - Object Sign : done
      - for each algorithm parameter.<br><br>
 - BackEnd
   - mock adapter test
