@@ -49,5 +49,6 @@
     - for each algorithm parameter.
   - Object Sign : done
      - for each algorithm parameter.<br><br>
+  - Unicode <-> Hex <-> Base64 converter
 - BackEnd
   - mock adapter test
