@@ -40,6 +40,8 @@
 
 - UI
   - Session Login<br><br>
+  - Object attribute map setting : done
+  - Show object detail attribute information and permission : done
   - Object Generate : doing..
     - for each algorithm parameter.
   - Object Export : done
@@ -49,6 +51,6 @@
     - for each algorithm parameter.
   - Object Sign : done
      - for each algorithm parameter.<br><br>
-  - Unicode <-> Hex <-> Base64 converter
+  - Unicode <-> Hex <-> Base64 converter : done
 - BackEnd
   - mock adapter test
