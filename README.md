@@ -40,6 +40,7 @@
 
 - UI
   - Session Login<br><br>
+  - Add partition , object
   - Object attribute map setting : done
   - Show object detail attribute information and permission : done
   - Object Generate : doing..
