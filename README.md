@@ -40,18 +40,26 @@
 
 - UI
   - Session Login<br><br>
-  - Add partition , object
-  - Object attribute map setting : done
-  - Show object detail attribute information and permission : done
-  - Object Generate : doing..
+  - Add partition , object  :  Done
+  - Object attribute map setting  :  Done
+  - Show object detail attribute information and permission  :  Done
+  - Object Generate  :  Done
     - for each algorithm parameter.
-  - Object Export : done
-  - Object Delete : done
-  - Object Modify : done
-  - Object En/Decrypt : done
+  - Object Export  :  Done
+  - Object Delete  :  Done
+  - Object Modify  :  Done
+  - Object En/Decrypt  :  Done
     - for each algorithm parameter.
-  - Object Sign : done
+  - Object Sign  :  Done
      - for each algorithm parameter.<br><br>
-  - Unicode <-> Hex <-> Base64 converter : done
+  - Unicode <-> Hex <-> Base64 converter  :  Done
 - BackEnd
   - mock adapter test
+     - onPost  :  Done
+        - Modify
+        - En/Decrypt
+        - Sign
+     - onGet  :  Done
+        - Object List
+        - Object Detail
+        - Partition list
