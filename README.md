@@ -1,7 +1,6 @@
 # cryptography
 
 
-[대충 정리](https://coderhs.tistory.com/category/%ED%95%98%EB%A3%A8%EC%82%B4%EC%9D%B4)
 
 대칭 키 알고리즘
 -    	암호화 복호화 키가 같은 알고리즘  DES(US) | SEED(Kr) | AES(US) | ARIA(Kr)
@@ -39,6 +38,8 @@
        M = C ^ d( mod n )  개인 키 사용
 
 ## To do List ( in vue + golang )
+
+[헷갈렸던 친구들](https://coderhs.tistory.com/category/%ED%95%98%EB%A3%A8%EC%82%B4%EC%9D%B4)
 
 - UI
   - Session Login<br><br>
