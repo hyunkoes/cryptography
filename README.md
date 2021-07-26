@@ -1,6 +1,8 @@
 # cryptography
 
 
+[대충 정리](https://coderhs.tistory.com/category/%ED%95%98%EB%A3%A8%EC%82%B4%EC%9D%B4)
+
 대칭 키 알고리즘
 -    	암호화 복호화 키가 같은 알고리즘  DES(US) | SEED(Kr) | AES(US) | ARIA(Kr)
 -    	입출력이 16bit 고정으로 16bit 씩 block으로 나누어 암호화함. 
