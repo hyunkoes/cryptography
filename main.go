@@ -42,6 +42,111 @@ func tp(t byte) (string){
 	}
 
 }
+
+
+
+// object generate post json struct
+type ObjectForm struct {
+	TargetPartition int    ` json:"slot" `
+	Id              string ` json:"id" `
+	Label           string ` json:"label" `
+	Algorithm       string ` json:"algo" `
+	Size            int    ` json:"size" `
+	Curve           string ` json:"curve" `
+}
+
+// function used at POST. Success->return nil Failed -> return err
+func genObject(obj ObjectForm) error {
+	p, err := getP11()
+	if err != nil {
+		return err
+	}
+	session, err := p.OpenSession(uint(obj.TargetPartition), CKF_SERIAL_SESSION|CKF_RW_SESSION)
+	if err != nil {
+		return err
+	}
+	defer p.CloseSession(session)
+	keyIdBytes, _ := hex.DecodeString(obj.Id)
+	p.Login(session, CKU_USER, "3434")
+
+	switch obj.Algorithm {
+	// rsa generate
+	case "RSA":
+		publicKeyTemplate := []*pkcs11.Attribute{
+			pkcs11.NewAttribute(pkcs11.CKA_CLASS, pkcs11.CKO_PUBLIC_KEY),
+			pkcs11.NewAttribute(pkcs11.CKA_KEY_TYPE, pkcs11.CKK_RSA),
+			pkcs11.NewAttribute(pkcs11.CKA_ID, keyIdBytes),
+			pkcs11.NewAttribute(pkcs11.CKA_TOKEN, true),
+			pkcs11.NewAttribute(pkcs11.CKA_VERIFY, true),
+			pkcs11.NewAttribute(pkcs11.CKA_PUBLIC_EXPONENT, []byte{1, 0, 1}),
+			pkcs11.NewAttribute(pkcs11.CKA_MODULUS_BITS, obj.Size),
+			pkcs11.NewAttribute(pkcs11.CKA_LABEL, obj.Label),
+		}
+		privateKeyTemplate := []*pkcs11.Attribute{
+			pkcs11.NewAttribute(pkcs11.CKA_TOKEN, true),
+			pkcs11.NewAttribute(pkcs11.CKA_SIGN, true),
+			pkcs11.NewAttribute(pkcs11.CKA_ID, keyIdBytes),
+			pkcs11.NewAttribute(pkcs11.CKA_LABEL, obj.Label),
+			pkcs11.NewAttribute(pkcs11.CKA_SENSITIVE, true),
+			pkcs11.NewAttribute(pkcs11.CKA_EXTRACTABLE, false),
+		}
+		pbk, pvk, e := p.GenerateKeyPair(session, []*pkcs11.Mechanism{pkcs11.NewMechanism(pkcs11.CKM_RSA_PKCS_KEY_PAIR_GEN, nil)},
+			publicKeyTemplate, privateKeyTemplate)
+		_, _, _ = pbk, pvk, e
+		if e != nil {
+
+			return e
+		}
+	case "AES":
+		secretKeyTemplate := []*pkcs11.Attribute{
+			pkcs11.NewAttribute(pkcs11.CKA_CLASS, pkcs11.CKO_SECRET_KEY),
+			pkcs11.NewAttribute(pkcs11.CKA_TOKEN, true),
+			pkcs11.NewAttribute(pkcs11.CKA_SIGN, true),
+			pkcs11.NewAttribute(pkcs11.CKA_ID, keyIdBytes),
+			pkcs11.NewAttribute(pkcs11.CKA_LABEL, obj.Label),
+			pkcs11.NewAttribute(pkcs11.CKA_VALUE_LEN, obj.Size),
+		}
+		key, e := p.GenerateKey(session,
+			[]*pkcs11.Mechanism{pkcs11.NewMechanism(pkcs11.CKM_AES_KEY_GEN, nil)},
+			secretKeyTemplate)
+		_, _ = key, e
+		if e != nil {
+			return e
+		}
+
+		return nil
+	case "EC":
+		curve, _ := hex.DecodeString(obj.Curve)
+		publicKeyTemplate := []*pkcs11.Attribute{
+			pkcs11.NewAttribute(pkcs11.CKA_EC_PARAMS, curve),
+			pkcs11.NewAttribute(pkcs11.CKA_LABEL, obj.Label),
+			pkcs11.NewAttribute(pkcs11.CKA_ID, keyIdBytes),
+			pkcs11.NewAttribute(pkcs11.CKA_KEY_TYPE, pkcs11.CKK_EC),
+			pkcs11.NewAttribute(pkcs11.CKA_VERIFY, true),
+			pkcs11.NewAttribute(pkcs11.CKA_ENCRYPT, false),
+			pkcs11.NewAttribute(pkcs11.CKA_TOKEN, true),
+			pkcs11.NewAttribute(pkcs11.CKA_PRIVATE, false),
+		}
+		privateKeyTemplate := []*pkcs11.Attribute{
+			pkcs11.NewAttribute(pkcs11.CKA_LABEL, obj.Label),
+			pkcs11.NewAttribute(pkcs11.CKA_ID, keyIdBytes),
+			pkcs11.NewAttribute(pkcs11.CKA_KEY_TYPE, pkcs11.CKK_EC),
+			pkcs11.NewAttribute(pkcs11.CKA_SIGN, true),
+			pkcs11.NewAttribute(pkcs11.CKA_DECRYPT, false),
+			pkcs11.NewAttribute(pkcs11.CKA_SENSITIVE, true),
+			pkcs11.NewAttribute(pkcs11.CKA_TOKEN, true),
+			pkcs11.NewAttribute(pkcs11.CKA_PRIVATE, true),
+		}
+		_, _, err := p.GenerateKeyPair(session, []*pkcs11.Mechanism{pkcs11.NewMechanism(pkcs11.CKM_EC_KEY_PAIR_GEN, nil)}, publicKeyTemplate, privateKeyTemplate)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	return nil
+}
+
+
 //                        pkcs11.NewAttribute(pkcs11.CKA_KEY_TYPE, pkcs11.CKK_RSA),
 
 func addAttribute(tp []*pkcs11.Attribute,opt string,val string) ([]*pkcs11.Attribute){
