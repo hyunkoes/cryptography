@@ -1,6 +1,7 @@
 # cryptography
 
 
+
 대칭 키 알고리즘
 -    	암호화 복호화 키가 같은 알고리즘  DES(US) | SEED(Kr) | AES(US) | ARIA(Kr)
 -    	입출력이 16bit 고정으로 16bit 씩 block으로 나누어 암호화함. 
@@ -38,19 +39,30 @@
 
 ## To do List ( in vue + golang )
 
+[헷갈렸던 친구들](https://coderhs.tistory.com/category/%ED%95%98%EB%A3%A8%EC%82%B4%EC%9D%B4)
+
 - UI
   - Session Login<br><br>
-  - Object attribute map setting : done
-  - Show object detail attribute information and permission : done
-  - Object Generate : doing..
+  - Add partition , object  :  Done
+  - Object attribute map setting  :  Done
+  - Show object detail attribute information and permission  :  Done
+  - Object Generate  :  Done
     - for each algorithm parameter.
-  - Object Export : done
-  - Object Delete : done
-  - Object Modify : done
-  - Object En/Decrypt : done
+  - Object Export  :  Done
+  - Object Delete  :  Done
+  - Object Modify  :  Done
+  - Object En/Decrypt  :  Done
     - for each algorithm parameter.
-  - Object Sign : done
+  - Object Sign  :  Done
      - for each algorithm parameter.<br><br>
-  - Unicode <-> Hex <-> Base64 converter : done
+  - Unicode <-> Hex <-> Base64 converter  :  Done
 - BackEnd
   - mock adapter test
+     - onPost  :  Done
+        - Modify
+        - En/Decrypt
+        - Sign
+     - onGet  :  Done
+        - Object List
+        - Object Detail
+        - Partition list
