@@ -43,7 +43,66 @@ func tp(t byte) (string){
 
 }
 
+// Function modify object's attribute value
+func modifyObject(c *gin.Context) error {
+	var obj struct {
+		PartSlot uint64 `json:"part_slot"`
+		Clazz    string `json:"type"`
+		KeyId    string `json:"key_id"`
+		Label    string `json:"label"`
+		// Attrs    []attribute `json:"attrs"`
+		Target 	 string `json:"target"`
+		Modify 	 string `json:"modify"`
+	}
+	if err := c.ShouldBindJSON(&obj); err != nil {
+		return errors.New("Not a json")
+	}
 
+	objs, err := getObjFromRequestBody(obj)
+	if err != nil {
+		return errors.New("Not in DB")
+	}
+
+	if len(objs) != 1 {
+		return errors.New("object not exists")
+	}
+
+	handle := pkcs11.ObjectHandle(objs[0].Handle)
+	p, err := getP11()
+	if err != nil {
+		return errors.New("getP11 failed")
+	}
+
+	session, err := p.OpenSession(uint(obj.PartSlot), CKF_SERIAL_SESSION|CKF_RW_SESSION)
+	if err != nil {
+		return errors.New("Opensession failed")
+	}
+
+	defer p.CloseSession(session)
+	p.Login(session, CKU_USER, "3434")
+	//Login Hardcoding
+
+	if obj.Target == "label" {
+		e := p.SetAttributeValue(session, handle, []*pkcs11.Attribute{pkcs11.NewAttribute(pkcs11.CKA_LABEL, obj.Modify)})
+		if e != nil {
+			return errors.New("SetAttributeValue failed")
+		}
+	} else {
+		// zero padding
+		if len(obj.Modify)%2 != 0 {
+			obj.Modify = "0" + obj.Modify
+		}
+		// to bytes array
+		keyIdBytes, _ := hex.DecodeString(obj.Modify)
+		e := p.SetAttributeValue(session, handle, []*pkcs11.Attribute{pkcs11.NewAttribute(pkcs11.CKA_ID, keyIdBytes)})
+		if e != nil {
+			return errors.New("SetAttributeValue failed")
+		}
+	}
+
+	return nil
+
+}
 
 // object generate post json struct
 type ObjectForm struct {
