@@ -66,3 +66,8 @@
         - Object List
         - Object Detail
         - Partition list
+ 
+  - Real server with Golang 
+      - Generate Object : Done
+      - Modify Object : Done
+      - Sign / verify : doing
