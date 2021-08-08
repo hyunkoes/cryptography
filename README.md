@@ -56,6 +56,9 @@
   - Object Sign  :  Done
      - for each algorithm parameter.<br><br>
   - Unicode <-> Hex <-> Base64 converter  :  Done
+  - Show Loading processing until backend api over : Done
+  
+  
 - BackEnd
   - mock adapter test
      - onPost  :  Done
