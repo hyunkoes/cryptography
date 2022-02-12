@@ -2,8 +2,6 @@
 
 ## cryptography
 
-
-
 <h3>대칭 키 알고리즘</h3>
 -    	암호화 복호화 키가 같은 알고리즘  DES(US) | SEED(Kr) | AES(US) | ARIA(Kr)
 -    	입출력이 16bit 고정으로 16bit 씩 block으로 나누어 암호화함. 
