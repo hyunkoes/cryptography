@@ -40,43 +40,43 @@
 <h4>ECDSA</h4>
 
 
-## To do List ( in vue + golang )
+## Worklist 
 
 [헷갈렸던 친구들](https://coderhs.tistory.com/category/%ED%95%98%EB%A3%A8%EC%82%B4%EC%9D%B4)
 
-- UI
-  - Session Login<br><br>
-  - Add partition , object  :  Done
-  - Object attribute map setting  :  Done
-  - Show object detail attribute information and permission  :  Done
-  - Object Generate  :  Done
+- UI ( Vue.js )
+  - Session Login
+  - Add partition , object
+  - Object attribute map setting
+  - Show object detail attribute information and permission
+  - Object Generate
     - for each algorithm parameter.
-  - Object Export  :  Done
-  - Object Delete  :  Done
-  - Object Modify  :  Done
-  - Object En/Decrypt  :  Done
+  - Object Export
+  - Object Delete
+  - Object Modify
+  - Object En/Decrypt
     - for each algorithm parameter.
-  - Object Sign  :  Done
-     - for each algorithm parameter.<br><br>
-  - Unicode <-> Hex <-> Base64 converter  :  Done
-  - Show Loading processing until backend api over : Done
+  - Object Sign
+     - for each algorithm parameter.
+  - Unicode <-> Hex <-> Base64 converter
+  - Show Loading processing until backend api over
   
   
-- BackEnd
-  - mock adapter test
-     - onPost  :  Done
+- BackEnd ( Gin gonic - golang )
+  - Development mocking unit test
+     - Post
         - Modify
         - En/Decrypt
         - Sign
-     - onGet  :  Done
+     - Get
         - Object List
         - Object Detail
         - Partition list
  
-  - Real server with Golang 
-      - Generate Object : Done
-      - Modify Object : Done
-      - Sign / verify : doing
+  - Production 
+      - Generate Object
+      - Modify Object
+      - Sign / verify
 
 ## Result
 
